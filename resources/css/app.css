@@ -11,6 +11,21 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
+    /* Šefo Užkandinė storefront type + palette (drawn from the logo) */
+    --font-display: 'Alfa Slab One', ui-serif, Georgia, 'Times New Roman', serif;
+    --font-cond: 'Barlow Condensed', 'Arial Narrow', ui-sans-serif, sans-serif;
+    --font-body: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+
+    --color-ink: #14110f;
+    --color-char: #241e1a;
+    --color-soot: #3a322c;
+    --color-paper: #f4ebd6;
+    --color-cream: #fdf8ec;
+    --color-flame: #c4122b;
+    --color-ember: #e8232c;
+    --color-mustard: #f0a81c;
+    --color-pickle: #6f8b3c;
+
     --color-zinc-50: #fafafa;
     --color-zinc-100: #f5f5f5;
     --color-zinc-200: #e5e5e5;
@@ -64,3 +79,381 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+/*
+|--------------------------------------------------------------------------
+| Šefo Užkandinė — storefront
+|--------------------------------------------------------------------------
+|
+| Grill-poster aesthetic: butcher paper, halftone ink, hard offset shadows,
+| heavy slab display type. Everything is namespaced with `sefo-` so the
+| authenticated Flux UI stays untouched.
+|
+*/
+
+@layer components {
+    .sefo-shell {
+        background-color: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-body);
+        font-feature-settings: 'ss01', 'cv01';
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* Fibrous paper grain, laid over everything but pointer-transparent. */
+    .sefo-grain::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 90;
+        pointer-events: none;
+        opacity: 0.32;
+        mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    }
+
+    .sefo-halftone {
+        background-image: radial-gradient(currentColor 1.1px, transparent 1.2px);
+        background-size: 9px 9px;
+        opacity: 0.16;
+    }
+
+    .sefo-grid-lines {
+        background-image:
+            repeating-linear-gradient(to right, color-mix(in srgb, var(--color-ink) 8%, transparent) 0 1px, transparent 1px 88px),
+            repeating-linear-gradient(to bottom, color-mix(in srgb, var(--color-ink) 8%, transparent) 0 1px, transparent 1px 88px);
+    }
+
+    /* Hard-inked frame: 3px stroke + solid offset shadow, no blur, ever. */
+    .sefo-frame {
+        border: 3px solid var(--color-ink);
+        box-shadow: 7px 7px 0 0 var(--color-ink);
+    }
+
+    .sefo-frame-sm {
+        border: 2px solid var(--color-ink);
+        box-shadow: 4px 4px 0 0 var(--color-ink);
+    }
+
+    .sefo-label {
+        font-family: var(--font-cond);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        line-height: 1;
+    }
+
+    /* Leading stays at 1 — Lithuanian carons and ogoneks need the room. */
+    .sefo-display {
+        font-family: var(--font-display);
+        font-weight: 400;
+        text-transform: uppercase;
+        line-height: 1;
+        letter-spacing: -0.015em;
+    }
+
+    /* Poster headline outline — used on the hero's second line. */
+    .sefo-outline {
+        color: transparent;
+        -webkit-text-stroke: 2px var(--color-ink);
+        paint-order: stroke fill;
+    }
+
+    .sefo-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        padding: 0.95rem 1.6rem 0.85rem;
+        border: 3px solid var(--color-ink);
+        box-shadow: 5px 5px 0 0 var(--color-ink);
+        font-family: var(--font-cond);
+        font-weight: 700;
+        font-size: 1.0625rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        line-height: 1;
+        transition:
+            transform 0.14s cubic-bezier(0.2, 0.8, 0.3, 1),
+            box-shadow 0.14s cubic-bezier(0.2, 0.8, 0.3, 1),
+            background-color 0.18s ease;
+    }
+
+    .sefo-btn:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 8px 8px 0 0 var(--color-ink);
+    }
+
+    .sefo-btn:active {
+        transform: translate(4px, 4px);
+        box-shadow: 0 0 0 0 var(--color-ink);
+    }
+
+    .sefo-btn--flame {
+        background-color: var(--color-flame);
+        color: var(--color-cream);
+    }
+
+    .sefo-btn--flame:hover {
+        background-color: var(--color-ember);
+    }
+
+    .sefo-btn--paper {
+        background-color: var(--color-cream);
+        color: var(--color-ink);
+    }
+
+    .sefo-btn--paper:hover {
+        background-color: var(--color-mustard);
+    }
+
+    .sefo-btn--ink {
+        background-color: var(--color-ink);
+        color: var(--color-cream);
+        box-shadow: 5px 5px 0 0 var(--color-flame);
+    }
+
+    .sefo-btn--ink:hover {
+        box-shadow: 8px 8px 0 0 var(--color-flame);
+    }
+
+    .sefo-btn--ink:active {
+        box-shadow: 0 0 0 0 var(--color-flame);
+    }
+
+    /* Price stamp: rotated ink block, like a hand-pressed rubber stamp. */
+    .sefo-stamp {
+        font-family: var(--font-display);
+        display: inline-block;
+        padding: 0.3rem 0.7rem 0.2rem;
+        background-color: var(--color-ink);
+        color: var(--color-cream);
+        rotate: -2.5deg;
+    }
+
+    /* Torn-ticket edges via notch masks on both sides. */
+    .sefo-ticket {
+        --notch: 13px;
+        background-color: var(--color-cream);
+        mask-image:
+            radial-gradient(var(--notch) at left center, transparent 98%, #000 100%),
+            radial-gradient(var(--notch) at right center, transparent 98%, #000 100%);
+        mask-composite: intersect;
+        -webkit-mask-composite: source-in;
+    }
+
+    .sefo-dash {
+        border-top: 3px dashed color-mix(in srgb, var(--color-ink) 35%, transparent);
+    }
+
+    .sefo-marquee-track {
+        display: flex;
+        width: max-content;
+        animation: sefo-marquee 38s linear infinite;
+    }
+
+    .sefo-marquee-track--reverse {
+        animation-direction: reverse;
+        animation-duration: 46s;
+    }
+
+    .sefo-ring {
+        animation: sefo-spin 26s linear infinite;
+    }
+
+    .sefo-ring--slow {
+        animation-duration: 44s;
+        animation-direction: reverse;
+    }
+
+    .sefo-float {
+        animation: sefo-float 6s ease-in-out infinite;
+    }
+
+    /* Menu card: the whole tile tilts a hair and the art pops on hover. */
+    .sefo-card {
+        position: relative;
+        background-color: var(--color-cream);
+        transition:
+            transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1),
+            box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    .sefo-card:hover {
+        transform: translate(-3px, -5px) rotate(-0.5deg);
+        box-shadow: 12px 14px 0 0 var(--color-ink);
+    }
+
+    .sefo-card__art {
+        transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    .sefo-card:hover .sefo-card__art {
+        transform: scale(1.07) rotate(-4deg);
+    }
+
+    .sefo-card:hover .sefo-card__price {
+        background-color: var(--color-flame);
+        rotate: 3deg;
+    }
+
+    .sefo-card__price {
+        transition:
+            background-color 0.2s ease,
+            rotate 0.2s ease;
+    }
+
+    /* Underlined nav links that fill from the left. */
+    .sefo-navlink {
+        position: relative;
+        padding-bottom: 3px;
+    }
+
+    .sefo-navlink::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 3px;
+        width: 100%;
+        background-color: var(--color-flame);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    .sefo-navlink:hover::after,
+    .sefo-navlink:focus-visible::after {
+        transform: scaleX(1);
+    }
+
+    /* Sticky header: compacts the logo once the page scrolls. */
+    .sefo-header {
+        transition: box-shadow 0.25s ease;
+    }
+
+    .sefo-header.is-stuck {
+        box-shadow: 0 9px 0 -3px color-mix(in srgb, var(--color-ink) 16%, transparent);
+    }
+
+    .sefo-header__logo {
+        height: 3.5rem;
+        transition: height 0.25s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    .sefo-header.is-stuck .sefo-header__logo {
+        height: 2.75rem;
+    }
+
+    .sefo-nav-panel {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    .sefo-nav-panel > * {
+        overflow: hidden;
+    }
+
+    .sefo-nav-panel.is-open {
+        grid-template-rows: 1fr;
+    }
+
+    /* Load-in + scroll reveals. `--d` staggers siblings. */
+    .sefo-rise {
+        opacity: 0;
+        animation: sefo-rise 0.85s cubic-bezier(0.16, 0.84, 0.28, 1) both;
+        animation-delay: var(--d, 0ms);
+    }
+
+    .sefo-reveal {
+        opacity: 0;
+        transform: translateY(28px);
+        transition:
+            opacity 0.7s cubic-bezier(0.16, 0.84, 0.28, 1),
+            transform 0.7s cubic-bezier(0.16, 0.84, 0.28, 1);
+        transition-delay: var(--d, 0ms);
+    }
+
+    .sefo-reveal.is-in {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes sefo-marquee {
+    from {
+        transform: translate3d(0, 0, 0);
+    }
+
+    to {
+        transform: translate3d(-50%, 0, 0);
+    }
+}
+
+@keyframes sefo-spin {
+    to {
+        rotate: 360deg;
+    }
+}
+
+@keyframes sefo-float {
+    0%,
+    100% {
+        transform: translateY(0) rotate(-1deg);
+    }
+
+    50% {
+        transform: translateY(-14px) rotate(1.5deg);
+    }
+}
+
+@keyframes sefo-rise {
+    from {
+        opacity: 0;
+        transform: translateY(34px) rotate(-1deg);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes sefo-sizzle {
+    0%,
+    100% {
+        transform: translateY(0) scaleY(1);
+        opacity: 0.75;
+    }
+
+    50% {
+        transform: translateY(-6px) scaleY(1.12);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .sefo-marquee-track,
+    .sefo-ring,
+    .sefo-float,
+    .sefo-rise {
+        animation: none !important;
+    }
+
+    .sefo-rise {
+        opacity: 1;
+    }
+
+    .sefo-reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .sefo-btn:hover,
+    .sefo-card:hover {
+        transform: none;
+    }
+}
