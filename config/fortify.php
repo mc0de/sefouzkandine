@@ -161,7 +161,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Features::registration(), // Disabled: demo site, staff accounts are seeded.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
