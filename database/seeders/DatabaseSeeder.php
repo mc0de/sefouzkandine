@@ -15,10 +15,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->admin()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // The demo account has a known password, so it never leaves a developer
+        // machine. Elsewhere the first admin is made with `php artisan admin:create`.
+        if (app()->isLocal()) {
+            User::factory()->admin()->create([
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+            ]);
+        }
 
         $this->call([
             MenuSeeder::class,
