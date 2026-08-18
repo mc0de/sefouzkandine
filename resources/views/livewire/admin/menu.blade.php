@@ -1,8 +1,4 @@
 <section class="w-full">
-    @include('partials.admin-heading')
-
-    <flux:heading class="sr-only">{{ __('Menu') }}</flux:heading>
-
     <x-admin.layout :heading="__('Menu')" :subheading="__('Manage the categories and items shown on the storefront')">
         <div class="flex items-center justify-between">
             <flux:heading size="lg">{{ __('Categories') }}</flux:heading>

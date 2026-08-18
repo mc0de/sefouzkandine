@@ -1,8 +1,4 @@
 <section class="w-full">
-    @include('partials.admin-heading')
-
-    <flux:heading class="sr-only">{{ __('Opening hours') }}</flux:heading>
-
     <x-admin.layout :heading="__('Opening hours')" :subheading="__('Set the window the kitchen is open on each weekday')">
         <form wire:submit="save" class="mt-2 space-y-6">
             <div class="space-y-4">

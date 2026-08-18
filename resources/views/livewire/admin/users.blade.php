@@ -1,8 +1,4 @@
 <section class="w-full">
-    @include('partials.admin-heading')
-
-    <flux:heading class="sr-only">{{ __('Users') }}</flux:heading>
-
     <x-admin.layout :heading="__('Users')" :subheading="__('Manage the accounts that can sign in to this application')">
         <div class="flex justify-end">
             <flux:button variant="primary" icon="plus" wire:click="createUser">{{ __('New user') }}</flux:button>

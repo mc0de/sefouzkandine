@@ -3,6 +3,7 @@
 use App\Livewire\Admin\Hours;
 use App\Models\OpeningHour;
 use App\Models\User;
+use Database\Seeders\OpeningHourSeeder;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -68,4 +69,16 @@ test('an open day requires both times', function () {
         ->set('days.0.closes_at', '')
         ->call('save')
         ->assertHasErrors(['days.0.opens_at', 'days.0.closes_at']);
+});
+
+test('the form is prefilled with the stored opening hours', function () {
+    $this->seed(OpeningHourSeeder::class);
+
+    Livewire::actingAs(User::factory()->admin()->create())
+        ->test(Hours::class)
+        ->assertSet('days.0.day_of_week', 1)
+        ->assertSet('days.0.opens_at', '12:00')
+        ->assertSet('days.0.closes_at', '20:00')
+        ->assertSet('days.6.day_of_week', 7)
+        ->assertSet('days.6.opens_at', '12:00');
 });

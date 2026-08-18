@@ -57,3 +57,14 @@ test('the admin pages render with data present', function () {
     $this->get(route('admin.menu'))->assertOk()->assertSee($category->name_lt);
     $this->get(route('admin.hours'))->assertOk()->assertSee('Monday');
 });
+
+test('admin pages do not repeat the sidebar navigation', function () {
+    $admin = User::factory()->admin()->create();
+
+    foreach (['admin.users', 'admin.menu', 'admin.hours'] as $route) {
+        $body = $this->actingAs($admin)->get(route($route))->assertOk()->getContent();
+
+        expect(substr_count($body, route('admin.users')))->toBeLessThanOrEqual(2)
+            ->and(substr_count($body, route('admin.hours')))->toBeLessThanOrEqual(2);
+    }
+});
