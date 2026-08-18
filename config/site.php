@@ -12,9 +12,26 @@ return [
     |
     */
 
+    'company' => ['name' => 'MB „Skonio taškas“', 'code' => '307551322'],
     'phone' => '+370 602 67676',
     'address' => 'Žaliųjų Ežerų g. 138, Vilnius (Balsiai)',
     'email' => 'labas@sefouzkandine.lt',
+    'maps' => 'https://maps.app.goo.gl/eBDhmG6Lo9gvVEL86',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Socialiniai tinklai
+    |--------------------------------------------------------------------------
+    |
+    | Raktas turi atitikti `site.social.*` vertimą ir ženkliuką
+    | x-site.social-links komponente. Tuščią reikšmę palikus, nuoroda nerodoma.
+    |
+    */
+
+    'social' => [
+        'facebook' => 'https://www.facebook.com/sefouzkandine/',
+        'instagram' => 'https://www.instagram.com/sefouzkandine/',
+    ],
 
     /*
     |--------------------------------------------------------------------------

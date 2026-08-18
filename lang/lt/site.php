@@ -38,7 +38,7 @@ return [
         'call' => 'Skambinti ir užsisakyti',
         'call_short' => 'Skambinti',
         'phone_label' => 'Užsisakyk telefonu',
-        'see_menu' => 'Pamatyti meniu',
+        'see_menu' => 'Meniu',
     ],
 
     'hero' => [
@@ -95,9 +95,15 @@ return [
         'about' => 'Šefo Užkandinė — sparneliai, bulvytės ir užkandžiai išsinešimui Balsiuose, Vilniuje.',
         'menu' => 'Meniu',
         'contacts' => 'Kontaktai',
+        'social' => 'Sekite mus',
+        'company_code' => 'Įmonės kodas',
         'rights' => '© :year Šefo Užkandinė · Visos teisės saugomos',
-        'staff' => 'Darbuotojams',
         'dashboard' => 'Valdymas',
+    ],
+
+    'social' => [
+        'facebook' => 'Facebook',
+        'instagram' => 'Instagram',
     ],
 
 ];

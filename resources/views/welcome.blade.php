@@ -14,7 +14,7 @@
     $address = config('site.address');
     // Kol el. paštas neveikia, adresas svetainėje nerodomas.
     // $email = config('site.email');
-    $mapsUrl = 'https://www.google.com/maps/search/?api=1&query='.rawurlencode((string) $address);
+    $mapsUrl = config('site.maps');
 
     $metaDescription = __('site.meta.description', ['address' => $address, 'phone' => $phone]);
 
@@ -33,6 +33,14 @@
     $dayRange = fn (array $row): string => $row['from'] === $row['to']
         ? __('site.days.'.$row['from'])
         : __('site.days.'.$row['from']).'–'.__('site.days.'.$row['to']);
+
+    /** Tos pačios žymų spalvos kaip x-site.menu-card. */
+    $tagTones = [
+        'hit' => 'bg-ink text-cream',
+        'new' => 'bg-mustard text-ink',
+        'spicy' => 'bg-flame text-cream',
+        'vege' => 'bg-pickle text-cream',
+    ];
 
     $schemaDays = [1 => 'Mo', 2 => 'Tu', 3 => 'We', 4 => 'Th', 5 => 'Fr', 6 => 'Sa', 7 => 'Su'];
 
@@ -53,6 +61,8 @@
         '@context' => 'https://schema.org',
         '@type' => 'LocalBusiness',
         'name' => __('site.brand'),
+        'legalName' => config('site.company.name'),
+        'sameAs' => array_values(array_filter(config('site.social', []))),
         'description' => $metaDescription,
         'url' => $localeUrl($activeLocale),
         'image' => asset('logo/sefo-logo-1200.webp'),
@@ -127,6 +137,8 @@
                 </nav>
 
                 <div class="ml-auto flex items-center gap-3 lg:ml-0 lg:gap-4">
+                    <x-site.social-links tone="light" size="sm" class="hidden xl:flex" />
+
                     <x-site.language-switcher />
 
                     <a href="{{ $phoneHref }}" class="hidden xl:block">
@@ -171,6 +183,11 @@
                             <span class="sefo-label text-sm text-soot/70">{{ __('site.language.label') }}</span>
                             <x-site.language-switcher />
                         </div>
+
+                        <div class="mt-6 flex items-center justify-between gap-4">
+                            <span class="sefo-label text-sm text-soot/70">{{ __('site.footer.social') }}</span>
+                            <x-site.social-links tone="light" size="sm" />
+                        </div>
                     </nav>
                 </div>
             </div>
@@ -182,7 +199,7 @@
                 <div class="sefo-grid-lines pointer-events-none absolute inset-0"></div>
                 <div class="pointer-events-none absolute -top-40 -right-32 size-[520px] rounded-full bg-flame/[0.07]"></div>
 
-                <div class="relative mx-auto grid max-w-[1400px] items-center gap-20 px-5 pt-14 pb-24 lg:grid-cols-12 lg:gap-10 lg:px-10 lg:pt-20 lg:pb-28">
+                <div class="relative mx-auto grid max-w-[1400px] items-center gap-20 px-5 pt-14 pb-16 lg:grid-cols-12 lg:gap-10 lg:px-10 lg:pt-20 lg:pb-20">
                     <div class="lg:col-span-7">
                         <p class="sefo-rise sefo-label inline-block bg-ink px-4 py-3 text-sm text-cream" style="--d: 60ms">
                             {{ __('site.hero.eyebrow') }}
@@ -221,7 +238,20 @@
                             </div>
                             <div class="sm:border-l-[3px] sm:border-dashed sm:border-ink/25 sm:pl-7">
                                 <dt class="sefo-label text-sm text-soot/70">{{ __('site.contacts.address') }}</dt>
-                                <dd class="mt-2.5 text-base leading-relaxed text-soot">{{ $address }}</dd>
+                                <dd class="mt-2.5">
+                                    <a
+                                        href="{{ $mapsUrl }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="group inline-flex items-start gap-2.5 text-base leading-relaxed text-soot transition-colors hover:text-flame"
+                                    >
+                                        <svg class="mt-0.5 size-5 shrink-0 text-flame transition-transform group-hover:-translate-y-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                        </svg>
+                                        <span>{{ $address }}</span>
+                                    </a>
+                                </dd>
                             </div>
                         </dl>
                     </div>
@@ -277,30 +307,37 @@
                         </div>
 
                         @if ($category->layout === 'list')
-                            {{-- Kainoraštis su punktyrine linija — kompaktiškoms kategorijoms --}}
-                            <div class="sefo-reveal sefo-frame mt-8 bg-ink text-cream">
+                            {{-- Kainoraštis: viena stambi iliustracija kategorijai ir eilutės su kainomis. --}}
+                            <div class="sefo-reveal sefo-frame mt-8 bg-cream">
                                 <div class="grid gap-8 p-6 lg:grid-cols-12 lg:p-8">
-                                    <div class="flex items-center gap-6 lg:col-span-3 lg:block">
+                                    <div class="flex items-center lg:col-span-3">
                                         @if (filled($category->items->first()?->art))
-                                            <div class="sefo-float w-24 shrink-0 lg:w-32">
-                                                <x-dynamic-component :component="'site.art.'.$category->items->first()->art" class="w-full" />
+                                            <div class="relative flex size-32 shrink-0 items-center justify-center overflow-hidden border-[3px] border-ink bg-paper lg:size-40">
+                                                <div class="sefo-halftone pointer-events-none absolute inset-0 text-ink"></div>
+                                                <x-dynamic-component :component="'site.art.'.$category->items->first()->art" class="relative h-[76%] w-auto" />
                                             </div>
                                         @endif
                                     </div>
 
                                     <ul class="lg:col-span-9">
                                         @foreach ($category->items as $item)
-                                            <li class="py-3.5">
-                                                <div class="flex items-baseline justify-between gap-6">
-                                                    <span class="text-lg">{{ $item->name }}</span>
-                                                    @if (filled($item->tag))
-                                                        <span class="sefo-label bg-mustard px-2 py-1 text-xs text-ink">{{ __('site.tags.'.$item->tag) }}</span>
+                                            <li class="py-3">
+                                                <div class="flex items-baseline gap-4">
+                                                    <h3 class="sefo-display text-xl text-ink sm:text-2xl">{{ $item->name }}</h3>
+
+                                                    @if (isset($tagTones[$item->tag]))
+                                                        <span class="sefo-label px-2 py-1.5 text-xs {{ $tagTones[$item->tag] }}">
+                                                            {{ __('site.tags.'.$item->tag) }}
+                                                        </span>
                                                     @endif
-                                                    <span class="sefo-display shrink-0 text-lg text-mustard">{{ $item->formatted_price }} €</span>
+
+                                                    <span class="h-px flex-1 border-b-2 border-dotted border-ink/25"></span>
+
+                                                    <p class="sefo-stamp shrink-0 text-lg leading-none">{{ $item->formatted_price }} €</p>
                                                 </div>
 
                                                 @if (filled($item->description))
-                                                    <p class="mt-2 max-w-[42ch] text-sm leading-relaxed text-cream/55">{{ $item->description }}</p>
+                                                    <p class="mt-2 max-w-[42ch] text-sm leading-relaxed text-soot">{{ $item->description }}</p>
                                                 @endif
                                             </li>
                                         @endforeach
@@ -365,9 +402,9 @@
                                 <p class="sefo-label text-sm text-cream">{{ __('site.contacts.hours') }}</p>
                             </div>
 
-                            <dl class="px-8 py-3">
+                            <dl class="px-8 py-5">
                                 @foreach ($openingHours as $row)
-                                    <div class="flex flex-wrap items-baseline gap-3 border-b-2 border-dashed border-ink/15 py-5 last:border-0">
+                                    <div class="flex flex-wrap items-baseline gap-3 py-3">
                                         <dt class="sefo-label text-sm text-soot">{{ $dayRange($row) }}</dt>
                                         <span class="h-px flex-1 border-b-2 border-dotted border-ink/15"></span>
                                         <dd @class([
@@ -430,6 +467,9 @@
                     <p class="mt-4 max-w-[34ch] text-base leading-relaxed text-cream/60">
                         {{ __('site.footer.about') }}
                     </p>
+
+                    <p class="sefo-label mt-8 text-sm text-mustard">{{ __('site.footer.social') }}</p>
+                    <x-site.social-links class="mt-4" />
                 </div>
 
                 <div class="lg:col-span-3">
@@ -473,17 +513,21 @@
             </div>
 
             <div class="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 border-t-[3px] border-cream/15 px-5 py-8 lg:px-10">
-                <p class="sefo-label text-xs text-cream/50">
-                    {{ __('site.footer.rights', ['year' => now()->year]) }}
-                </p>
-
-                <div class="sefo-label flex items-center gap-6 text-xs text-cream/50">
-                    @auth
-                        <a href="{{ route('dashboard') }}" class="hover:text-cream">{{ __('site.footer.dashboard') }}</a>
-                    @else
-                        <a href="{{ route('login') }}" class="hover:text-cream">{{ __('site.footer.staff') }}</a>
-                    @endauth
+                <div class="sefo-label space-y-2 text-xs text-cream/50">
+                    <p>{{ __('site.footer.rights', ['year' => now()->year]) }}</p>
+                    <p>
+                        {{ config('site.company.name') }}
+                        <span class="px-1.5 text-cream/30">·</span>
+                        {{ __('site.footer.company_code') }}: {{ config('site.company.code') }}
+                    </p>
                 </div>
+
+                {{-- Prisijungimo nuoroda viešai nerodoma; prisijungusiems lieka nuoroda į valdymą. --}}
+                @auth
+                    <div class="sefo-label flex items-center gap-6 text-xs text-cream/50">
+                        <a href="{{ route('dashboard') }}" class="hover:text-cream">{{ __('site.footer.dashboard') }}</a>
+                    </div>
+                @endauth
             </div>
         </footer>
 

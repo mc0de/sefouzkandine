@@ -131,17 +131,35 @@ test('the storefront states no facts we cannot stand behind', function () {
     }
 });
 
-test('the staff link points at login for guests', function () {
+test('the storefront does not advertise the staff login', function () {
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('Darbuotojams', false)
-        ->assertSee(route('login'), false);
+        ->assertDontSee('Darbuotojams', false)
+        ->assertDontSee(route('login'), false);
 });
 
-test('the staff link points at the dashboard for signed in staff', function () {
+test('signed in staff still get a link to the admin', function () {
     $this->actingAs(User::factory()->create())
         ->get(route('home'))
         ->assertOk()
         ->assertSee('Valdymas', false)
         ->assertSee(route('dashboard'), false);
+});
+
+test('it links the social profiles and shows the legal entity', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee(config('site.social.facebook'), false)
+        ->assertSee(config('site.social.instagram'), false)
+        ->assertSee(config('site.company.name'), false)
+        ->assertSee(config('site.company.code'), false)
+        ->assertSee('"sameAs":["'.config('site.social.facebook').'"', false);
+});
+
+test('it points every map link at the configured place', function () {
+    $body = $this->get(route('home'))->assertOk()->getContent();
+
+    expect(substr_count($body, (string) config('site.maps')))->toBe(3)
+        ->and($body)->not->toContain('maps.google.com')
+        ->and($body)->not->toContain('maps/search');
 });

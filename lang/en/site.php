@@ -38,7 +38,7 @@ return [
         'call' => 'Call to order',
         'call_short' => 'Call',
         'phone_label' => 'Order by phone',
-        'see_menu' => 'See the menu',
+        'see_menu' => 'Menu',
     ],
 
     'hero' => [
@@ -95,9 +95,15 @@ return [
         'about' => 'Šefo Užkandinė — wings, fries and snacks to go in Balsiai, Vilnius.',
         'menu' => 'Menu',
         'contacts' => 'Contacts',
+        'social' => 'Follow us',
+        'company_code' => 'Company code',
         'rights' => '© :year Šefo Užkandinė · All rights reserved',
-        'staff' => 'Staff',
         'dashboard' => 'Admin',
+    ],
+
+    'social' => [
+        'facebook' => 'Facebook',
+        'instagram' => 'Instagram',
     ],
 
 ];
