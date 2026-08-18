@@ -1,55 +1,52 @@
 @props([
     'name',
-    'description' => '',
+    'description' => null,
     'price',
-    'art' => 'burger',
-    'weight' => null,
+    'art' => null,
     'tag' => null,
     'delay' => 0,
 ])
 
 @php
     $tagTones = [
-        'HITAS' => 'bg-ink text-cream',
-        'NAUJAS' => 'bg-mustard text-ink',
-        'AŠTRU' => 'bg-flame text-cream',
-        'VEGE' => 'bg-pickle text-cream',
+        'hit' => 'bg-ink text-cream',
+        'new' => 'bg-mustard text-ink',
+        'spicy' => 'bg-flame text-cream',
+        'vege' => 'bg-pickle text-cream',
     ];
+
+    $artComponent = filled($art) && view()->exists('components.site.art.'.$art)
+        ? 'site.art.'.$art
+        : null;
 @endphp
 
-<article class="sefo-card sefo-frame sefo-reveal flex flex-col" style="--d: {{ $delay }}ms">
-    <div class="relative overflow-hidden border-b-[3px] border-ink bg-paper px-6 pt-7 pb-5">
+{{-- Siaura kortelė-eilutė: iliustracija kairėje, kaina dešinėje, taškinė linija tarp jų. --}}
+<article class="sefo-card sefo-frame sefo-reveal flex items-center gap-4 bg-cream p-4 sm:gap-5 sm:p-5" style="--d: {{ $delay }}ms">
+    <div class="relative flex size-20 shrink-0 items-center justify-center overflow-hidden border-[3px] border-ink bg-paper sm:size-24">
         <div class="sefo-halftone pointer-events-none absolute inset-0 text-ink"></div>
 
-        @if ($tag)
-            <span class="sefo-label absolute top-4 left-0 z-10 py-1.5 pr-3 pl-4 text-[0.68rem] {{ $tagTones[$tag] ?? $tagTones['HITAS'] }}">
-                {{ $tag }}
+        @if ($artComponent)
+            <x-dynamic-component :component="$artComponent" class="sefo-card__art relative h-[76%] w-auto" />
+        @else
+            <span class="sefo-display relative text-3xl text-ink/20">{{ mb_substr($name, 0, 1) }}</span>
+        @endif
+    </div>
+
+    <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
+        <h3 class="sefo-display min-w-0 text-xl break-words text-ink sm:text-2xl">{{ $name }}</h3>
+
+        @if (isset($tagTones[$tag]))
+            <span class="sefo-label px-2 py-1.5 text-xs {{ $tagTones[$tag] }}">
+                {{ __('site.tags.'.$tag) }}
             </span>
         @endif
 
-        {{-- Fiksuotas aukštis, kad skirtingų proporcijų iliustracijos liktų vienoje linijoje --}}
-        <div class="sefo-card__art relative flex h-44 items-end justify-center">
-            <x-dynamic-component :component="'site.art.' . $art" class="h-full w-auto" />
-        </div>
-    </div>
+        <span class="hidden h-px flex-1 border-b-2 border-dotted border-ink/25 sm:block"></span>
 
-    <div class="flex flex-1 flex-col bg-cream p-6">
-        <h3 class="sefo-display min-h-[2em] text-[1.55rem] text-ink">{{ $name }}</h3>
+        <p class="sefo-card__price sefo-stamp ml-auto shrink-0 text-lg leading-none sm:ml-0">{{ $price }} €</p>
 
-        @if ($description)
-            <p class="mt-3 text-[0.9rem] leading-relaxed text-soot">{{ $description }}</p>
+        @if (filled($description))
+            <p class="w-full text-sm leading-relaxed text-soot">{{ $description }}</p>
         @endif
-
-        <div class="sefo-dash mt-auto flex items-end justify-between gap-4 pt-5">
-            <div>
-                @if ($weight)
-                    <p class="sefo-label text-[0.65rem] text-soot/70">{{ $weight }}</p>
-                @endif
-                <p class="sefo-card__price sefo-stamp mt-2 text-[1.15rem] leading-none">{{ $price }} €</p>
-            </div>
-            <a href="#uzsakymas" class="sefo-label shrink-0 border-b-[3px] border-flame pb-1 text-[0.7rem] text-ink transition-colors hover:text-flame">
-                Į krepšelį →
-            </a>
-        </div>
     </div>
 </article>

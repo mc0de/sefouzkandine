@@ -1,55 +1,96 @@
 @php
-    $burgers = config('menu.burgers');
-    $chicken = config('menu.chicken');
-    $sides = config('menu.sides');
-    $reviews = config('menu.reviews');
-    $hours = config('menu.hours');
-    $phone = config('menu.phone');
-    $phoneHref = 'tel:'.str_replace(' ', '', $phone);
-    $address = config('menu.address');
-    $email = config('menu.email');
+    /**
+     * Vieša svetainė. Meniu ir darbo laikas ateina iš duomenų bazės, kontaktai —
+     * iš config/site.php, visi statiniai tekstai — iš lang/{locale}/site.php.
+     */
+    $locales = config('site.locales', []);
+    $defaultLocale = \App\Http\Middleware\SetLocale::default();
+    $activeLocale = app()->getLocale();
+
+    $localeUrl = fn (string $code): string => $code === $defaultLocale ? route('home') : route('home.'.$code);
+
+    $phone = config('site.phone');
+    $phoneHref = 'tel:'.str_replace(' ', '', (string) $phone);
+    $address = config('site.address');
+    // Kol el. paštas neveikia, adresas svetainėje nerodomas.
+    // $email = config('site.email');
+    $mapsUrl = 'https://www.google.com/maps/search/?api=1&query='.rawurlencode((string) $address);
+
+    $metaDescription = __('site.meta.description', ['address' => $address, 'phone' => $phone]);
 
     $nav = [
-        'Meniu' => '#meniu',
-        'Rinkiniai' => '#rinkiniai',
-        'Kaip veikia' => '#kaip-veikia',
-        'Atsiliepimai' => '#atsiliepimai',
-        'Kontaktai' => '#kontaktai',
+        __('site.nav.menu') => '#meniu',
+        __('site.nav.contacts') => '#kontaktai',
     ];
 
-    $stats = [
-        ['value' => '12', 'unit' => 'min', 'label' => 'Vidutinis laukimas'],
-        ['value' => '200', 'unit' => 'g', 'label' => 'Rankų darbo mėsa'],
-        ['value' => '4,9', 'unit' => '★', 'label' => '1 240 atsiliepimų'],
-    ];
+    /** Bėgantis skyrių numeratorius — 01, 02, 03… */
+    $section = 0;
+    $eyebrow = function (string $label) use (&$section): string {
+        return str_pad((string) ++$section, 2, '0', STR_PAD_LEFT).' / '.$label;
+    };
 
-    $steps = [
-        [
-            'no' => '01',
-            'title' => 'Pasirink',
-            'text' => 'Rinkis prie kasos, telefonu arba pristatymo programėlėje. Meniu trumpas, nes jame tik tai, ką darome geriausiai.',
+    /** „Pirmadienis–Sekmadienis“ arba viena diena, kai eilutė vienadienė. */
+    $dayRange = fn (array $row): string => $row['from'] === $row['to']
+        ? __('site.days.'.$row['from'])
+        : __('site.days.'.$row['from']).'–'.__('site.days.'.$row['to']);
+
+    $schemaDays = [1 => 'Mo', 2 => 'Tu', 3 => 'We', 4 => 'Th', 5 => 'Fr', 6 => 'Sa', 7 => 'Su'];
+
+    $schemaHours = [];
+
+    foreach ($openingHours as $row) {
+        if (blank($row['window'])) {
+            continue;
+        }
+
+        $schemaHours[] = ($row['from'] === $row['to']
+            ? $schemaDays[$row['from']]
+            : $schemaDays[$row['from']].'-'.$schemaDays[$row['to']]
+        ).' '.str_replace('–', '-', $row['window']);
+    }
+
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'LocalBusiness',
+        'name' => __('site.brand'),
+        'description' => $metaDescription,
+        'url' => $localeUrl($activeLocale),
+        'image' => asset('logo/sefo-logo-1200.webp'),
+        'telephone' => $phone,
+        // 'email' => $email,
+        'address' => [
+            '@type' => 'PostalAddress',
+            'streetAddress' => $address,
+            'addressLocality' => 'Vilnius',
+            'addressCountry' => 'LT',
         ],
-        [
-            'no' => '02',
-            'title' => 'Kepame',
-            'text' => 'Mėsa prispaudžiama ant įkaitintos plytos, vištiena leidžiama į gruzdintuvę. Tik tada, kai užsisakai.',
-        ],
-        [
-            'no' => '03',
-            'title' => 'Atsiimk',
-            'text' => 'Vidutiniškai per 12 minučių ant prekystalio. Pristatymas Kaune — iki 35 minučių.',
-        ],
+        'openingHours' => $schemaHours,
     ];
 @endphp
 
 <!DOCTYPE html>
-<html lang="lt" class="scroll-smooth">
+<html lang="{{ app()->getLocale() }}" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Šefo Užkandinė — burgeriai ir vištiena ant atviros ugnies</title>
-        <meta name="description" content="Rankomis formuoti burgeriai ir per naktį marinuota vištiena Kaune. Greita ir skanu — vidutiniškai per 12 minučių.">
+        <title>{{ __('site.meta.title') }}</title>
+        <meta name="description" content="{{ $metaDescription }}">
+
+        <link rel="canonical" href="{{ $localeUrl($activeLocale) }}">
+        @foreach ($locales as $code => $settings)
+            <link rel="alternate" hreflang="{{ $code }}" href="{{ $localeUrl($code) }}">
+        @endforeach
+        <link rel="alternate" hreflang="x-default" href="{{ $localeUrl($defaultLocale) }}">
+
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="{{ __('site.brand') }}">
+        <meta property="og:title" content="{{ __('site.meta.title') }}">
+        <meta property="og:description" content="{{ $metaDescription }}">
+        <meta property="og:url" content="{{ $localeUrl($activeLocale) }}">
+        <meta property="og:locale" content="{{ $activeLocale }}">
+        <meta property="og:image" content="{{ asset('logo/sefo-logo-1200.webp') }}">
+        <meta name="twitter:card" content="summary_large_image">
 
         <link rel="icon" href="{{ asset('logo/sefo-logo-256.png') }}" type="image/png">
         <link rel="apple-touch-icon" href="{{ asset('logo/sefo-logo-256.png') }}">
@@ -57,54 +98,51 @@
         @fonts
 
         @vite(['resources/css/app.css', 'resources/js/site.js'])
+
+        <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
     </head>
 
-    <body class="sefo-shell sefo-grain">
+    <body class="sefo-shell sefo-grain pb-[4.75rem] lg:pb-0">
         <a href="#meniu" class="sefo-label sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[100] focus:bg-ink focus:px-4 focus:py-3 focus:text-cream">
-            Pereiti prie meniu
+            {{ __('site.skip_to_menu') }}
         </a>
-
-        {{-- Viršutinė bėganti juosta --}}
-        <x-site.marquee
-            tone="flame"
-            class="border-b-[3px] border-ink"
-            :items="['Greita ir skanu', 'Kepame nuo 11:00', 'Pristatymas visame Kaune', 'Rankų darbo mėsa', 'Nuo 2014 metų', 'Vištiena marinuojama 24 h']"
-        />
 
         {{-- Antraštė --}}
         <header data-site-header class="sefo-header sticky top-0 z-50 border-b-[3px] border-ink bg-paper/95 backdrop-blur-sm">
-            <div class="mx-auto flex max-w-[1400px] items-center gap-6 px-5 py-3 lg:px-10">
-                <a href="#" class="flex shrink-0 items-center" aria-label="Šefo Užkandinė">
+            <div class="mx-auto flex max-w-[1400px] items-center gap-5 px-5 py-3 lg:gap-6 lg:px-10">
+                <a href="{{ $localeUrl($activeLocale) }}" class="flex shrink-0 items-center" aria-label="{{ __('site.brand') }}">
                     <img
                         src="{{ asset('logo/sefo-logo-512.webp') }}"
-                        alt="Šefo Užkandinė"
+                        alt="{{ __('site.meta.logo_alt') }}"
                         class="sefo-header__logo w-auto"
                         width="463"
                         height="512"
                     >
                 </a>
 
-                <nav class="ml-auto hidden items-center gap-8 lg:flex">
+                <nav class="ml-auto hidden items-center gap-8 lg:flex" aria-label="{{ __('site.nav.menu') }}">
                     @foreach ($nav as $label => $href)
-                        <a href="{{ $href }}" class="sefo-navlink sefo-label text-[0.72rem] text-ink">{{ $label }}</a>
+                        <a href="{{ $href }}" class="sefo-navlink sefo-label text-sm text-ink">{{ $label }}</a>
                     @endforeach
                 </nav>
 
-                <div class="ml-auto flex items-center gap-4 lg:ml-0">
+                <div class="ml-auto flex items-center gap-3 lg:ml-0 lg:gap-4">
+                    <x-site.language-switcher />
+
                     <a href="{{ $phoneHref }}" class="hidden xl:block">
-                        <span class="sefo-label block text-[0.58rem] text-soot/70">Užsisakyk telefonu</span>
-                        <span class="sefo-display mt-1.5 block text-[1.05rem] text-ink">{{ $phone }}</span>
+                        <span class="sefo-label block text-sm text-soot/70">{{ __('site.cta.phone_label') }}</span>
+                        <span class="sefo-display mt-1.5 block text-lg text-ink">{{ $phone }}</span>
                     </a>
 
-                    <a href="#uzsakymas" class="sefo-btn sefo-btn--flame hidden px-5 py-3 text-[0.78rem] sm:inline-flex">
-                        Užsisakyti
+                    <a href="{{ $phoneHref }}" class="sefo-btn sefo-btn--flame hidden px-5 py-3 text-sm lg:inline-flex">
+                        {{ __('site.cta.call') }}
                     </a>
 
                     <button
                         type="button"
                         data-nav-toggle
                         aria-expanded="false"
-                        aria-label="Atidaryti meniu"
+                        aria-label="{{ __('site.open_menu') }}"
                         class="sefo-frame-sm flex size-11 shrink-0 items-center justify-center bg-cream lg:hidden"
                     >
                         <span class="flex flex-col gap-[5px]">
@@ -118,13 +156,21 @@
 
             <div data-nav-panel class="sefo-nav-panel border-t-[3px] border-ink bg-cream lg:hidden">
                 <div>
-                    <nav class="flex flex-col px-5 pb-5">
+                    <nav class="flex flex-col px-5 pb-6" aria-label="{{ __('site.nav.menu') }}">
                         @foreach ($nav as $label => $href)
-                            <a href="{{ $href }}" class="sefo-label border-b-2 border-dashed border-ink/20 py-4 text-[0.78rem] text-ink">
+                            <a href="{{ $href }}" class="sefo-label border-b-2 border-dashed border-ink/20 py-4 text-sm text-ink">
                                 {{ $label }}
                             </a>
                         @endforeach
-                        <a href="{{ $phoneHref }}" class="sefo-display mt-5 text-[1.3rem] text-flame">{{ $phone }}</a>
+
+                        <a href="{{ $phoneHref }}" class="sefo-btn sefo-btn--flame mt-6 w-full">
+                            {{ __('site.cta.call') }}
+                        </a>
+
+                        <div class="mt-6 flex items-center justify-between gap-4">
+                            <span class="sefo-label text-sm text-soot/70">{{ __('site.language.label') }}</span>
+                            <x-site.language-switcher />
+                        </div>
                     </nav>
                 </div>
             </div>
@@ -135,42 +181,48 @@
             <section class="relative overflow-hidden border-b-[3px] border-ink">
                 <div class="sefo-grid-lines pointer-events-none absolute inset-0"></div>
                 <div class="pointer-events-none absolute -top-40 -right-32 size-[520px] rounded-full bg-flame/[0.07]"></div>
-                <div class="sefo-halftone pointer-events-none absolute -bottom-12 left-1/2 h-56 w-[72%] -translate-x-1/2 text-flame"></div>
 
                 <div class="relative mx-auto grid max-w-[1400px] items-center gap-20 px-5 pt-14 pb-24 lg:grid-cols-12 lg:gap-10 lg:px-10 lg:pt-20 lg:pb-28">
                     <div class="lg:col-span-7">
-                        <p class="sefo-rise sefo-label inline-block -rotate-[1.8deg] bg-ink px-4 py-2.5 text-[0.64rem] text-cream" style="--d: 60ms">
-                            Kaunas · Greita ir skanu nuo 2014
+                        <p class="sefo-rise sefo-label inline-block bg-ink px-4 py-3 text-sm text-cream" style="--d: 60ms">
+                            {{ __('site.hero.eyebrow') }}
                         </p>
 
                         <h1 class="sefo-display mt-7 text-[clamp(3.1rem,9.4vw,7.4rem)] text-ink">
-                            <span class="sefo-rise block" style="--d: 160ms">Ugnis.</span>
-                            <span class="sefo-rise sefo-outline block" style="--d: 260ms">Mėsa.</span>
-                            <span class="sefo-rise block text-flame" style="--d: 360ms">Traškumas.</span>
+                            <span class="sr-only">{{ __('site.hero.slogan') }}</span>
+                            @foreach (__('site.hero.words') as $word)
+                                <span
+                                    aria-hidden="true"
+                                    @class([
+                                        'sefo-rise block',
+                                        'sefo-outline' => $loop->index === 1,
+                                        'text-flame' => $loop->last,
+                                    ])
+                                    style="--d: {{ 160 + $loop->index * 100 }}ms"
+                                >{{ $word }}{{ $loop->last ? '.' : ',' }}</span>
+                            @endforeach
                         </h1>
 
-                        <p class="sefo-rise mt-8 max-w-[46ch] text-[1.05rem] leading-relaxed text-soot" style="--d: 460ms">
-                            Rankomis formuoti burgeriai ir per naktį marinuota vištiena. Kepame tik tada, kai užsisakai —
-                            niekas nelaukia po šildymo lempa.
+                        <p class="sefo-rise mt-8 max-w-[46ch] text-lg leading-relaxed text-soot" style="--d: 460ms">
+                            {{ __('site.hero.lead') }}
                         </p>
 
                         <div class="sefo-rise mt-10 flex flex-wrap items-center gap-4" style="--d: 540ms">
-                            <a href="#meniu" class="sefo-btn sefo-btn--flame">Pamatyti meniu</a>
-                            <a href="{{ $phoneHref }}" class="sefo-btn sefo-btn--paper">Užsisakyti išsinešimui</a>
+                            <a href="{{ $phoneHref }}" class="sefo-btn sefo-btn--flame">{{ __('site.cta.call') }}</a>
+                            <a href="#meniu" class="sefo-btn sefo-btn--paper">{{ __('site.cta.see_menu') }}</a>
                         </div>
 
-                        <dl class="sefo-rise mt-14 grid max-w-2xl grid-cols-3 border-t-[3px] border-ink pt-6" style="--d: 640ms">
-                            @foreach ($stats as $stat)
-                                <div @class([
-                                    'pr-3' => ! $loop->last,
-                                    'border-l-[3px] border-dashed border-ink/25 pl-4 sm:pl-7' => ! $loop->first,
-                                ])>
-                                    <dd class="sefo-display text-[clamp(1.9rem,4.4vw,2.9rem)] text-ink">
-                                        {{ $stat['value'] }}<span class="text-flame">{{ $stat['unit'] }}</span>
-                                    </dd>
-                                    <dt class="sefo-label mt-2.5 text-[0.58rem] leading-snug text-soot/80">{{ $stat['label'] }}</dt>
-                                </div>
-                            @endforeach
+                        <dl class="sefo-rise mt-14 grid max-w-2xl gap-6 border-t-[3px] border-ink pt-6 sm:grid-cols-2" style="--d: 640ms">
+                            <div>
+                                <dt class="sefo-label text-sm text-soot/70">{{ __('site.cta.phone_label') }}</dt>
+                                <dd class="mt-2.5">
+                                    <a href="{{ $phoneHref }}" class="sefo-display text-[clamp(1.5rem,3.4vw,2.1rem)] text-flame transition-colors hover:text-ink">{{ $phone }}</a>
+                                </dd>
+                            </div>
+                            <div class="sm:border-l-[3px] sm:border-dashed sm:border-ink/25 sm:pl-7">
+                                <dt class="sefo-label text-sm text-soot/70">{{ __('site.contacts.address') }}</dt>
+                                <dd class="mt-2.5 text-base leading-relaxed text-soot">{{ $address }}</dd>
+                            </div>
                         </dl>
                     </div>
 
@@ -183,7 +235,7 @@
                             </div>
                             <img
                                 src="{{ asset('logo/sefo-logo-1200.webp') }}"
-                                alt="Šefo Užkandinė — greita ir skanu"
+                                alt="{{ __('site.meta.logo_alt') }}"
                                 class="sefo-rise absolute inset-0 m-auto w-[74%]"
                                 style="--d: 240ms"
                                 width="1084"
@@ -192,224 +244,86 @@
                             >
                         </div>
 
-                        <div class="sefo-float pointer-events-none absolute -bottom-12 -left-1 w-32 sm:w-40 lg:-left-8">
-                            <x-site.art.burger class="w-full" />
+                        <div class="sefo-float pointer-events-none absolute -bottom-10 -left-2 w-32 sm:w-40 lg:-left-8">
+                            <x-site.art.wings class="w-full" />
                         </div>
 
                         <div class="sefo-frame-sm sefo-rise absolute -top-3 right-3 rotate-[7deg] bg-mustard px-4 py-3 text-center lg:-right-4" style="--d: 700ms">
-                            <p class="sefo-label text-[0.54rem] text-ink/70">Burgeris nuo</p>
-                            <p class="sefo-display mt-1.5 text-[1.7rem] text-ink">5,90 €</p>
+                            <p class="sefo-label text-xs text-ink/70">{{ __('site.hero.badge') }}</p>
+                            <a href="{{ $phoneHref }}" class="sefo-display mt-1.5 block text-lg text-ink">{{ $phone }}</a>
                         </div>
                     </div>
                 </div>
             </section>
-
-            <x-site.marquee
-                tone="ink"
-                reverse
-                class="border-b-[3px] border-ink"
-                :items="['Smash', 'Sparneliai', 'Bekonas', 'Čederis', 'Strips', 'Bulvytės', 'Čili majonezas', 'Kojelės', 'Limonadas']"
-            />
 
             {{-- Meniu --}}
             <section id="meniu" class="scroll-mt-24 border-b-[3px] border-ink bg-paper">
-                <div class="mx-auto max-w-[1400px] px-5 py-20 lg:px-10 lg:py-28">
-                    <div class="sefo-reveal flex flex-wrap items-end justify-between gap-8 border-b-[3px] border-ink pb-8">
-                        <div>
-                            <p class="sefo-label text-[0.64rem] text-flame">01 / Meniu</p>
-                            <h2 class="sefo-display mt-4 text-[clamp(2.7rem,7vw,5.4rem)] text-ink">Burgeriai</h2>
-                        </div>
-                        <p class="max-w-[38ch] text-[0.95rem] leading-relaxed text-soot">
-                            Bandelės kepamos vietoje, mėsa formuojama tą patį rytą. Jokių priedų, kurių nemokėtum
-                            perskaityti garsiai.
-                        </p>
-                    </div>
+                <div class="mx-auto max-w-[1400px] px-5 py-14 lg:px-10 lg:py-20">
+                    @forelse ($categories as $category)
+                        <div @class([
+                            'sefo-reveal flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b-[3px] border-ink pb-5',
+                            'mt-14' => ! $loop->first,
+                        ])>
+                            <div>
+                                <p class="sefo-label text-sm text-flame">{{ $eyebrow(__('site.menu.eyebrow')) }}</p>
+                                <h2 class="sefo-display mt-3 text-[clamp(2rem,4.6vw,3.4rem)] text-ink">{{ $category->name }}</h2>
+                            </div>
 
-                    <div class="mt-12 grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
-                        @foreach ($burgers as $item)
-                            <x-site.menu-card
-                                :name="$item['name']"
-                                :description="$item['description']"
-                                :price="$item['price']"
-                                :weight="$item['weight']"
-                                :art="$item['art']"
-                                :tag="$item['tag']"
-                                :delay="$loop->index * 90"
-                            />
-                        @endforeach
-                    </div>
-
-                    <div class="sefo-reveal mt-24 flex flex-wrap items-end justify-between gap-8 border-b-[3px] border-ink pb-8">
-                        <div>
-                            <p class="sefo-label text-[0.64rem] text-flame">02 / Meniu</p>
-                            <h2 class="sefo-display mt-4 text-[clamp(2.7rem,7vw,5.4rem)] text-ink">Vištiena</h2>
-                        </div>
-                        <p class="max-w-[38ch] text-[0.95rem] leading-relaxed text-soot">
-                            Marinuojame pasukose 24 valandas, tada apvoliojame savo prieskonių mišinyje. Traškumas
-                            girdimas iš kito stalo.
-                        </p>
-                    </div>
-
-                    <div class="mt-12 grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
-                        @foreach ($chicken as $item)
-                            <x-site.menu-card
-                                :name="$item['name']"
-                                :description="$item['description']"
-                                :price="$item['price']"
-                                :weight="$item['weight']"
-                                :art="$item['art']"
-                                :tag="$item['tag']"
-                                :delay="$loop->index * 90"
-                            />
-                        @endforeach
-                    </div>
-
-                    {{-- Priedai --}}
-                    <div class="sefo-reveal sefo-frame mt-20 bg-ink text-cream">
-                        <div class="grid gap-10 p-8 lg:grid-cols-12 lg:p-12">
-                            <div class="lg:col-span-4">
-                                <p class="sefo-label text-[0.64rem] text-mustard">03 / Priedai</p>
-                                <h3 class="sefo-display mt-4 text-[clamp(2rem,4vw,3rem)]">Prie viso to</h3>
-                                <p class="mt-4 max-w-[30ch] text-[0.9rem] leading-relaxed text-cream/70">
-                                    Bulvytės kepamos dukart, padažai gaminami kas rytą.
+                            @if (filled($category->description))
+                                <p class="sefo-frame-sm max-w-[46ch] bg-mustard px-5 py-4 text-base leading-snug font-semibold text-ink lg:text-lg">
+                                    {{ $category->description }}
                                 </p>
-                            </div>
+                            @endif
+                        </div>
 
-                            <ul class="grid gap-x-12 lg:col-span-8 sm:grid-cols-2">
-                                @foreach ($sides as $side)
-                                    <li class="flex items-baseline gap-3 py-3">
-                                        <span class="text-[0.95rem]">{{ $side['name'] }}</span>
-                                        <span class="h-px flex-1 border-b-2 border-dotted border-cream/30"></span>
-                                        <span class="sefo-display shrink-0 text-[1.05rem] text-mustard">{{ $side['price'] }} €</span>
-                                    </li>
+                        @if ($category->layout === 'list')
+                            {{-- Kainoraštis su punktyrine linija — kompaktiškoms kategorijoms --}}
+                            <div class="sefo-reveal sefo-frame mt-8 bg-ink text-cream">
+                                <div class="grid gap-8 p-6 lg:grid-cols-12 lg:p-8">
+                                    <div class="flex items-center gap-6 lg:col-span-3 lg:block">
+                                        @if (filled($category->items->first()?->art))
+                                            <div class="sefo-float w-24 shrink-0 lg:w-32">
+                                                <x-dynamic-component :component="'site.art.'.$category->items->first()->art" class="w-full" />
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <ul class="lg:col-span-9">
+                                        @foreach ($category->items as $item)
+                                            <li class="py-3.5">
+                                                <div class="flex items-baseline justify-between gap-6">
+                                                    <span class="text-lg">{{ $item->name }}</span>
+                                                    @if (filled($item->tag))
+                                                        <span class="sefo-label bg-mustard px-2 py-1 text-xs text-ink">{{ __('site.tags.'.$item->tag) }}</span>
+                                                    @endif
+                                                    <span class="sefo-display shrink-0 text-lg text-mustard">{{ $item->formatted_price }} €</span>
+                                                </div>
+
+                                                @if (filled($item->description))
+                                                    <p class="mt-2 max-w-[42ch] text-sm leading-relaxed text-cream/55">{{ $item->description }}</p>
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                        @else
+                            <div class="mt-8 grid gap-6 md:grid-cols-2">
+                                @foreach ($category->items as $item)
+                                    <x-site.menu-card
+                                        :name="$item->name"
+                                        :description="$item->description"
+                                        :price="$item->formatted_price"
+                                        :art="$item->art"
+                                        :tag="$item->tag"
+                                        :delay="$loop->index * 90"
+                                    />
                                 @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {{-- Rinkinys --}}
-            <section id="rinkiniai" class="relative scroll-mt-24 overflow-hidden border-b-[3px] border-ink bg-flame text-cream">
-                <div class="sefo-halftone pointer-events-none absolute inset-0 text-ink"></div>
-
-                <div class="relative mx-auto grid max-w-[1400px] items-center gap-14 px-5 py-20 lg:grid-cols-12 lg:gap-10 lg:px-10 lg:py-28">
-                    <div class="sefo-reveal lg:col-span-7">
-                        <p class="sefo-label text-[0.64rem] text-cream/80">04 / Rinkiniai</p>
-                        <h2 class="sefo-display mt-5 text-[clamp(2.8rem,7.4vw,5.8rem)]">Šefo<br>rinkinys</h2>
-                        <p class="mt-6 max-w-[42ch] text-[1.05rem] leading-relaxed text-cream/90">
-                            Burgeris, bulvytės su šefo prieskoniais ir naminis limonadas. Vienas kvitas, nulis dvejojimų.
-                        </p>
-
-                        <ul class="mt-8 space-y-3.5">
-                            @foreach (['Bet kuris burgeris iš meniu', 'Didelė porcija bulvyčių', 'Naminis limonadas arba gaivusis', 'Padažas pasirinkimui'] as $line)
-                                <li class="flex items-center gap-4">
-                                    <span class="sefo-display flex size-7 shrink-0 items-center justify-center bg-cream text-[0.85rem] text-flame">✓</span>
-                                    <span class="text-[0.95rem] text-cream/90">{{ $line }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
-
-                        <a href="#uzsakymas" class="sefo-btn sefo-btn--paper mt-10">Užsisakyti rinkinį</a>
-                    </div>
-
-                    <div class="sefo-reveal lg:col-span-5" style="--d: 140ms">
-                        <div class="sefo-ticket sefo-frame mx-auto max-w-[420px] p-8 text-ink">
-                            <div class="flex items-start justify-between gap-4">
-                                <div>
-                                    <p class="sefo-label text-[0.58rem] text-soot/70">Kvitas Nr. 001</p>
-                                    <p class="sefo-display mt-2 text-[1.9rem] leading-none">Rinkinys</p>
-                                </div>
-                                <span class="sefo-label bg-flame px-3 py-2 text-[0.6rem] text-cream">-17%</span>
                             </div>
-
-                            <div class="mt-8 flex items-end justify-center gap-1">
-                                <div class="w-20 shrink-0"><x-site.art.fries class="w-full" /></div>
-                                <div class="w-32 shrink-0"><x-site.art.burger class="w-full" /></div>
-                                <div class="w-18 shrink-0"><x-site.art.cup class="w-full" /></div>
-                            </div>
-
-                            <div class="sefo-dash mt-8 space-y-3 pt-6">
-                                <div class="flex items-baseline justify-between">
-                                    <span class="sefo-label text-[0.6rem] text-soot/70">Atskirai</span>
-                                    <span class="sefo-display text-[1.1rem] text-soot/60 line-through">14,30 €</span>
-                                </div>
-                                <div class="flex items-baseline justify-between">
-                                    <span class="sefo-label text-[0.68rem]">Rinkinyje</span>
-                                    <span class="sefo-stamp text-[1.6rem] leading-none">11,90 €</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {{-- Kaip veikia --}}
-            <section id="kaip-veikia" class="relative scroll-mt-24 overflow-hidden border-b-[3px] border-ink bg-ink text-cream">
-                <div class="sefo-grid-lines pointer-events-none absolute inset-0 opacity-30"></div>
-
-                <div class="relative mx-auto max-w-[1400px] px-5 py-20 lg:px-10 lg:py-28">
-                    <div class="sefo-reveal max-w-3xl">
-                        <p class="sefo-label text-[0.64rem] text-mustard">05 / Kaip veikia</p>
-                        <h2 class="sefo-display mt-5 text-[clamp(2.6rem,6.6vw,5rem)]">
-                            Trys žingsniai iki <span class="text-flame">pirmo kąsnio</span>
-                        </h2>
-                    </div>
-
-                    <div class="mt-16 grid gap-px border-[3px] border-cream/20 bg-cream/20 md:grid-cols-3">
-                        @foreach ($steps as $step)
-                            <div class="sefo-reveal group bg-ink p-8 transition-colors duration-300 hover:bg-char lg:p-10" style="--d: {{ $loop->index * 110 }}ms">
-                                <span class="sefo-display block text-[clamp(3.4rem,7vw,5rem)] leading-none text-cream/15 transition-colors duration-300 group-hover:text-flame">
-                                    {{ $step['no'] }}
-                                </span>
-                                <h3 class="sefo-display mt-6 text-[1.7rem]">{{ $step['title'] }}</h3>
-                                <p class="mt-4 text-[0.95rem] leading-relaxed text-cream/70">{{ $step['text'] }}</p>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    <div class="sefo-reveal mt-14 flex flex-wrap items-center gap-6">
-                        <div class="sefo-float w-28 shrink-0"><x-site.art.wings class="w-full" /></div>
-                        <p class="sefo-label max-w-[46ch] text-[0.68rem] leading-relaxed text-cream/60">
-                            Nespėji per pietų pertrauką? Paskambink iš anksto — rinkinys lauks ant prekystalio.
-                        </p>
-                    </div>
-                </div>
-            </section>
-
-            {{-- Atsiliepimai --}}
-            <section id="atsiliepimai" class="scroll-mt-24 border-b-[3px] border-ink bg-paper">
-                <div class="mx-auto max-w-[1400px] px-5 py-20 lg:px-10 lg:py-28">
-                    <div class="sefo-reveal flex flex-wrap items-end justify-between gap-8">
-                        <div>
-                            <p class="sefo-label text-[0.64rem] text-flame">06 / Atsiliepimai</p>
-                            <h2 class="sefo-display mt-4 text-[clamp(2.6rem,6.6vw,5rem)] text-ink">Ką sako<br>svečiai</h2>
-                        </div>
-                        <p class="sefo-display text-[clamp(2rem,4vw,3rem)] text-ink">
-                            4,9<span class="text-flame">★</span>
-                            <span class="sefo-label mt-2.5 block text-[0.58rem] text-soot/70">1 240 vertinimų</span>
-                        </p>
-                    </div>
-
-                    <div class="mt-14 grid gap-8 md:grid-cols-3">
-                        @foreach ($reviews as $review)
-                            <figure class="sefo-reveal sefo-frame sefo-ticket flex flex-col p-8" style="--d: {{ $loop->index * 110 }}ms">
-                                <div class="sefo-label flex items-center justify-between text-[0.56rem] text-soot/70">
-                                    <span>Kvitas · {{ str_pad((string) ($loop->index + 12), 4, '0', STR_PAD_LEFT) }}</span>
-                                    <span class="text-[0.8rem] tracking-[0.2em] text-flame">★★★★★</span>
-                                </div>
-
-                                <blockquote class="sefo-display mt-6 text-[1.15rem] leading-[1.35] text-ink">
-                                    „{{ $review['quote'] }}”
-                                </blockquote>
-
-                                <figcaption class="sefo-dash mt-auto flex items-center justify-between gap-4 pt-6">
-                                    <span class="sefo-label text-[0.68rem] text-ink">{{ $review['author'] }}</span>
-                                    <span class="sefo-label text-[0.54rem] text-soot/60">{{ $review['meta'] }}</span>
-                                </figcaption>
-                            </figure>
-                        @endforeach
-                    </div>
+                        @endif
+                    @empty
+                        <p class="sefo-display text-[clamp(1.6rem,4vw,2.4rem)] text-ink/50">{{ __('site.menu.empty') }}</p>
+                    @endforelse
                 </div>
             </section>
 
@@ -417,41 +331,50 @@
             <section id="kontaktai" class="scroll-mt-24 border-b-[3px] border-ink bg-cream">
                 <div class="mx-auto grid max-w-[1400px] gap-14 px-5 py-20 lg:grid-cols-12 lg:px-10 lg:py-28">
                     <div class="sefo-reveal lg:col-span-5">
-                        <p class="sefo-label text-[0.64rem] text-flame">07 / Kontaktai</p>
-                        <h2 class="sefo-display mt-4 text-[clamp(2.4rem,5.6vw,4.2rem)] text-ink">Rasi mus<br>čia</h2>
+                        <p class="sefo-label text-sm text-flame">{{ $eyebrow(__('site.contacts.eyebrow')) }}</p>
+                        <h2 class="sefo-display mt-4 text-[clamp(2.4rem,5.6vw,4.2rem)] text-ink">{{ __('site.contacts.title') }}</h2>
 
                         <div class="mt-10 space-y-8">
                             <div>
-                                <p class="sefo-label text-[0.58rem] text-soot/70">Adresas</p>
-                                <p class="sefo-display mt-2 text-[1.4rem] text-ink">{{ $address }}</p>
+                                <p class="sefo-label text-sm text-soot/70">{{ __('site.contacts.address') }}</p>
+                                <p class="sefo-display mt-2 text-2xl text-ink">{{ $address }}</p>
+                                <a href="{{ $mapsUrl }}" target="_blank" rel="noopener noreferrer" class="sefo-label mt-3 inline-block border-b-[3px] border-flame pb-1 text-sm text-ink transition-colors hover:text-flame">
+                                    {{ __('site.contacts.directions') }} →
+                                </a>
                             </div>
                             <div>
-                                <p class="sefo-label text-[0.58rem] text-soot/70">Telefonas</p>
-                                <a href="{{ $phoneHref }}" class="sefo-display mt-2 block text-[1.4rem] text-flame transition-colors hover:text-ink">
+                                <p class="sefo-label text-sm text-soot/70">{{ __('site.contacts.phone') }}</p>
+                                <a href="{{ $phoneHref }}" class="sefo-display mt-2 block text-2xl text-flame transition-colors hover:text-ink">
                                     {{ $phone }}
                                 </a>
                             </div>
+                            {{-- Įjungti, kai turėsime veikiančią el. pašto dėžutę
                             <div>
-                                <p class="sefo-label text-[0.58rem] text-soot/70">El. paštas</p>
-                                <a href="mailto:{{ $email }}" class="sefo-display mt-2 block text-[1.4rem] text-ink transition-colors hover:text-flame">
+                                <p class="sefo-label text-sm text-soot/70">{{ __('site.contacts.email') }}</p>
+                                <a href="mailto:{{ $email }}" class="sefo-display mt-2 block text-2xl text-ink transition-colors hover:text-flame">
                                     {{ $email }}
                                 </a>
                             </div>
+                            --}}
                         </div>
                     </div>
 
                     <div class="sefo-reveal lg:col-span-7" style="--d: 120ms">
                         <div class="sefo-frame bg-paper">
                             <div class="border-b-[3px] border-ink bg-ink px-8 py-5">
-                                <p class="sefo-label text-[0.64rem] text-cream">Darbo laikas</p>
+                                <p class="sefo-label text-sm text-cream">{{ __('site.contacts.hours') }}</p>
                             </div>
 
                             <dl class="px-8 py-3">
-                                @foreach ($hours as $row)
+                                @foreach ($openingHours as $row)
                                     <div class="flex flex-wrap items-baseline gap-3 border-b-2 border-dashed border-ink/15 py-5 last:border-0">
-                                        <dt class="sefo-label text-[0.64rem] text-soot">{{ $row['days'] }}</dt>
+                                        <dt class="sefo-label text-sm text-soot">{{ $dayRange($row) }}</dt>
                                         <span class="h-px flex-1 border-b-2 border-dotted border-ink/15"></span>
-                                        <dd class="sefo-display text-[1.15rem] text-ink">{{ $row['time'] }}</dd>
+                                        <dd @class([
+                                            'sefo-display text-lg',
+                                            'text-ink' => filled($row['window']),
+                                            'text-soot/50' => blank($row['window']),
+                                        ])>{{ $row['window'] ?? __('site.contacts.closed') }}</dd>
                                     </div>
                                 @endforeach
                             </dl>
@@ -463,10 +386,7 @@
                                         <span class="size-3 rounded-full bg-cream"></span>
                                         <span class="absolute inset-0 animate-ping rounded-full border-[3px] border-flame/50"></span>
                                     </span>
-                                    <div>
-                                        <p class="sefo-label text-[0.58rem] text-soot/70">Kioskas prie Savanorių</p>
-                                        <p class="sefo-display mt-1.5 text-[1.15rem] text-ink">Nemokama stovėjimo vieta prie pat durų</p>
-                                    </div>
+                                    <p class="max-w-[34ch] text-base leading-relaxed text-soot">{{ __('site.contacts.takeaway') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -475,19 +395,20 @@
             </section>
 
             {{-- Užsakymas --}}
-            <section id="uzsakymas" class="relative scroll-mt-24 overflow-hidden border-b-[3px] border-ink bg-mustard">
+            <section class="relative overflow-hidden border-b-[3px] border-ink bg-mustard">
                 <div class="sefo-halftone pointer-events-none absolute inset-0 text-ink"></div>
 
                 <div class="relative mx-auto flex max-w-[1400px] flex-col items-center gap-8 px-5 py-20 text-center lg:px-10 lg:py-24">
-                    <p class="sefo-reveal sefo-label text-[0.64rem] text-ink/70">Alkis nelaukia</p>
+                    <p class="sefo-reveal sefo-label text-sm text-ink/70">{{ __('site.closing.eyebrow') }}</p>
                     <h2 class="sefo-reveal sefo-display max-w-[24ch] text-[clamp(2.6rem,7vw,5.4rem)] text-ink" style="--d: 80ms">
-                        Paskambink ir mes jau kepame
+                        {{ __('site.closing.title') }}
                     </h2>
                     <a href="{{ $phoneHref }}" class="sefo-reveal sefo-display text-[clamp(1.9rem,5.4vw,3.6rem)] text-flame underline decoration-[6px] underline-offset-[10px] transition-colors hover:text-ink" style="--d: 160ms">
                         {{ $phone }}
                     </a>
-                    <p class="sefo-reveal max-w-[46ch] text-[0.95rem] leading-relaxed text-ink/70" style="--d: 220ms">
-                        Išsinešimui arba pristatymui Kaune. Vidutinis laukimas — 12 minučių, piko metu iki 20.
+                    <a href="{{ $phoneHref }}" class="sefo-reveal sefo-btn sefo-btn--ink" style="--d: 220ms">{{ __('site.cta.call') }}</a>
+                    <p class="sefo-reveal max-w-[46ch] text-base leading-relaxed text-ink/70" style="--d: 280ms">
+                        {{ __('site.closing.lead') }}
                     </p>
                 </div>
             </section>
@@ -499,64 +420,83 @@
                 <div class="lg:col-span-5">
                     <img
                         src="{{ asset('logo/sefo-logo-512.webp') }}"
-                        alt="Šefo Užkandinė"
+                        alt="{{ __('site.meta.logo_alt') }}"
                         class="h-28 w-auto"
                         width="463"
                         height="512"
                         loading="lazy"
                     >
-                    <p class="mt-6 max-w-[34ch] text-[0.95rem] leading-relaxed text-cream/60">
-                        Šefo Užkandinė — burgeriai ir vištiena ant atviros ugnies. Greita ir skanu nuo 2014 metų.
+                    <p class="sefo-display mt-6 text-2xl text-mustard">{{ __('site.hero.slogan') }}</p>
+                    <p class="mt-4 max-w-[34ch] text-base leading-relaxed text-cream/60">
+                        {{ __('site.footer.about') }}
                     </p>
                 </div>
 
                 <div class="lg:col-span-3">
-                    <p class="sefo-label text-[0.58rem] text-mustard">Meniu</p>
+                    <p class="sefo-label text-sm text-mustard">{{ __('site.footer.menu') }}</p>
                     <ul class="mt-5 space-y-3">
                         @foreach ($nav as $label => $href)
                             <li>
-                                <a href="{{ $href }}" class="sefo-navlink text-[0.95rem] text-cream/80 hover:text-cream">{{ $label }}</a>
+                                <a href="{{ $href }}" class="sefo-navlink text-base text-cream/80 hover:text-cream">{{ $label }}</a>
                             </li>
                         @endforeach
                     </ul>
-                </div>
 
-                <div class="lg:col-span-4">
-                    <p class="sefo-label text-[0.58rem] text-mustard">Kontaktai</p>
-                    <ul class="mt-5 space-y-3 text-[0.95rem] text-cream/80">
-                        <li>{{ $address }}</li>
-                        <li><a href="{{ $phoneHref }}" class="hover:text-cream">{{ $phone }}</a></li>
-                        <li><a href="mailto:{{ $email }}" class="hover:text-cream">{{ $email }}</a></li>
-                    </ul>
-
-                    <div class="mt-8 flex flex-wrap gap-3">
-                        @foreach (['Facebook', 'Instagram', 'Wolt'] as $channel)
-                            <span class="sefo-label border-2 border-cream/25 px-3 py-2 text-[0.56rem] text-cream/70">{{ $channel }}</span>
+                    <div class="mt-8 flex flex-wrap items-center gap-3">
+                        @foreach ($locales as $code => $settings)
+                            <a
+                                href="{{ $localeUrl($code) }}"
+                                hreflang="{{ $code }}"
+                                lang="{{ $code }}"
+                                @class([
+                                    'sefo-label border-2 px-3 py-2 text-xs transition-colors',
+                                    'border-mustard text-mustard' => $code === $activeLocale,
+                                    'border-cream/25 text-cream/70 hover:text-cream' => $code !== $activeLocale,
+                                ])
+                            >{{ $settings['label'] }}</a>
                         @endforeach
                     </div>
                 </div>
+
+                <div class="lg:col-span-4">
+                    <p class="sefo-label text-sm text-mustard">{{ __('site.footer.contacts') }}</p>
+                    <ul class="mt-5 space-y-3 text-base text-cream/80">
+                        <li>
+                            <a href="{{ $mapsUrl }}" target="_blank" rel="noopener noreferrer" class="hover:text-cream">{{ $address }}</a>
+                        </li>
+                        <li><a href="{{ $phoneHref }}" class="hover:text-cream">{{ $phone }}</a></li>
+                        {{-- <li><a href="mailto:{{ $email }}" class="hover:text-cream">{{ $email }}</a></li> --}}
+                    </ul>
+
+                    <a href="{{ $phoneHref }}" class="sefo-btn sefo-btn--flame mt-8">{{ __('site.cta.call') }}</a>
+                </div>
             </div>
 
-            <x-site.marquee
-                tone="mustard"
-                class="border-y-[3px] border-cream/15"
-                :items="['Greita ir skanu', 'Burgeriai', 'Vištiena', 'Bulvytės', 'Rinkiniai', 'Iki pasimatymo']"
-            />
-
-            <div class="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-5 py-8 lg:px-10">
-                <p class="sefo-label text-[0.56rem] text-cream/50">
-                    © {{ now()->year }} Šefo Užkandinė · Visos teisės saugomos
+            <div class="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 border-t-[3px] border-cream/15 px-5 py-8 lg:px-10">
+                <p class="sefo-label text-xs text-cream/50">
+                    {{ __('site.footer.rights', ['year' => now()->year]) }}
                 </p>
 
-                <div class="sefo-label flex items-center gap-6 text-[0.56rem] text-cream/50">
-                    <a href="#" class="hover:text-cream">Privatumas</a>
+                <div class="sefo-label flex items-center gap-6 text-xs text-cream/50">
                     @auth
-                        <a href="{{ route('dashboard') }}" class="hover:text-cream">Valdymas</a>
+                        <a href="{{ route('dashboard') }}" class="hover:text-cream">{{ __('site.footer.dashboard') }}</a>
                     @else
-                        <a href="{{ route('login') }}" class="hover:text-cream">Darbuotojams</a>
+                        <a href="{{ route('login') }}" class="hover:text-cream">{{ __('site.footer.staff') }}</a>
                     @endauth
                 </div>
             </div>
         </footer>
+
+        {{-- Skambučio juosta telefonuose: išsinešamo maisto užsakymai keliauja per telefoną --}}
+        <a
+            href="{{ $phoneHref }}"
+            class="fixed inset-x-0 bottom-0 z-[95] flex items-center justify-center gap-3 border-t-[3px] border-ink bg-flame px-5 py-4 text-cream transition-colors hover:bg-ember lg:hidden"
+        >
+            <svg class="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6.5 3h3l1.5 4.5-2 1.5a12 12 0 0 0 6 6l1.5-2 4.5 1.5v3a2 2 0 0 1-2.2 2A17.5 17.5 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3Z" />
+            </svg>
+            <span class="sefo-label text-sm">{{ __('site.cta.call') }}</span>
+            <span class="sefo-display text-base">{{ $phone }}</span>
+        </a>
     </body>
 </html>

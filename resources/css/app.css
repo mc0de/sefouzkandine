@@ -246,17 +246,6 @@ select:focus[data-flux-control] {
         border-top: 3px dashed color-mix(in srgb, var(--color-ink) 35%, transparent);
     }
 
-    .sefo-marquee-track {
-        display: flex;
-        width: max-content;
-        animation: sefo-marquee 38s linear infinite;
-    }
-
-    .sefo-marquee-track--reverse {
-        animation-direction: reverse;
-        animation-duration: 46s;
-    }
-
     .sefo-ring {
         animation: sefo-spin 26s linear infinite;
     }
@@ -280,8 +269,8 @@ select:focus[data-flux-control] {
     }
 
     .sefo-card:hover {
-        transform: translate(-3px, -5px) rotate(-0.5deg);
-        box-shadow: 12px 14px 0 0 var(--color-ink);
+        transform: translate(-3px, -4px);
+        box-shadow: 10px 11px 0 0 var(--color-ink);
     }
 
     .sefo-card__art {
@@ -381,16 +370,6 @@ select:focus[data-flux-control] {
     }
 }
 
-@keyframes sefo-marquee {
-    from {
-        transform: translate3d(0, 0, 0);
-    }
-
-    to {
-        transform: translate3d(-50%, 0, 0);
-    }
-}
-
 @keyframes sefo-spin {
     to {
         rotate: 360deg;
@@ -435,7 +414,6 @@ select:focus[data-flux-control] {
 
 @media (prefers-reduced-motion: reduce) {
 
-    .sefo-marquee-track,
     .sefo-ring,
     .sefo-float,
     .sefo-rise {

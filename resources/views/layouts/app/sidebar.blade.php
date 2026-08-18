@@ -16,6 +16,22 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
+
+                @can('access-admin')
+                    <flux:sidebar.group :heading="__('Admin')" class="grid">
+                        <flux:sidebar.item icon="users" :href="route('admin.users')" :current="request()->routeIs('admin.users*')" wire:navigate>
+                            {{ __('Users') }}
+                        </flux:sidebar.item>
+
+                        <flux:sidebar.item icon="squares-2x2" :href="route('admin.menu')" :current="request()->routeIs('admin.menu*')" wire:navigate>
+                            {{ __('Menu') }}
+                        </flux:sidebar.item>
+
+                        <flux:sidebar.item icon="clock" :href="route('admin.hours')" :current="request()->routeIs('admin.hours*')" wire:navigate>
+                            {{ __('Opening hours') }}
+                        </flux:sidebar.item>
+                    </flux:sidebar.group>
+                @endcan
             </flux:sidebar.nav>
 
             <flux:spacer />
@@ -63,6 +79,24 @@
                     </flux:menu.radio.group>
 
                     <flux:menu.separator />
+
+                    @can('access-admin')
+                        <flux:menu.radio.group>
+                            <flux:menu.item :href="route('admin.users')" icon="users" wire:navigate>
+                                {{ __('Users') }}
+                            </flux:menu.item>
+
+                            <flux:menu.item :href="route('admin.menu')" icon="squares-2x2" wire:navigate>
+                                {{ __('Menu') }}
+                            </flux:menu.item>
+
+                            <flux:menu.item :href="route('admin.hours')" icon="clock" wire:navigate>
+                                {{ __('Opening hours') }}
+                            </flux:menu.item>
+                        </flux:menu.radio.group>
+
+                        <flux:menu.separator />
+                    @endcan
 
                     <flux:menu.radio.group>
                         <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
