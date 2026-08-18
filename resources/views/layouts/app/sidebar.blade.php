@@ -12,22 +12,34 @@
 
             <flux:sidebar.nav>
                 <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                    <flux:sidebar.item :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                        <x-slot:icon>
+                            <flux:icon icon="home" variant="outline" class="size-4 text-sky-500 dark:text-sky-400" />
+                        </x-slot:icon>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 @can('access-admin')
                     <flux:sidebar.group :heading="__('Admin')" class="grid">
-                        <flux:sidebar.item icon="users" :href="route('admin.users')" :current="request()->routeIs('admin.users*')" wire:navigate>
+                        <flux:sidebar.item :href="route('admin.users')" :current="request()->routeIs('admin.users*')" wire:navigate>
+                            <x-slot:icon>
+                                <flux:icon icon="users" variant="outline" class="size-4 text-blue-500 dark:text-blue-400" />
+                            </x-slot:icon>
                             {{ __('Users') }}
                         </flux:sidebar.item>
 
-                        <flux:sidebar.item icon="squares-2x2" :href="route('admin.menu')" :current="request()->routeIs('admin.menu*')" wire:navigate>
+                        <flux:sidebar.item :href="route('admin.menu')" :current="request()->routeIs('admin.menu*')" wire:navigate>
+                            <x-slot:icon>
+                                <flux:icon icon="squares-2x2" variant="outline" class="size-4 text-amber-500 dark:text-amber-400" />
+                            </x-slot:icon>
                             {{ __('Menu') }}
                         </flux:sidebar.item>
 
-                        <flux:sidebar.item icon="clock" :href="route('admin.hours')" :current="request()->routeIs('admin.hours*')" wire:navigate>
+                        <flux:sidebar.item :href="route('admin.hours')" :current="request()->routeIs('admin.hours*')" wire:navigate>
+                            <x-slot:icon>
+                                <flux:icon icon="clock" variant="outline" class="size-4 text-emerald-500 dark:text-emerald-400" />
+                            </x-slot:icon>
                             {{ __('Opening hours') }}
                         </flux:sidebar.item>
                     </flux:sidebar.group>
@@ -35,16 +47,6 @@
             </flux:sidebar.nav>
 
             <flux:spacer />
-
-            <flux:sidebar.nav>
-                <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
-                </flux:sidebar.item>
-
-                <flux:sidebar.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
-                </flux:sidebar.item>
-            </flux:sidebar.nav>
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
@@ -82,15 +84,24 @@
 
                     @can('access-admin')
                         <flux:menu.radio.group>
-                            <flux:menu.item :href="route('admin.users')" icon="users" wire:navigate>
+                            <flux:menu.item :href="route('admin.users')" wire:navigate>
+                                <x-slot:icon>
+                                    <flux:icon icon="users" variant="mini" class="size-4 text-blue-500 dark:text-blue-400" />
+                                </x-slot:icon>
                                 {{ __('Users') }}
                             </flux:menu.item>
 
-                            <flux:menu.item :href="route('admin.menu')" icon="squares-2x2" wire:navigate>
+                            <flux:menu.item :href="route('admin.menu')" wire:navigate>
+                                <x-slot:icon>
+                                    <flux:icon icon="squares-2x2" variant="mini" class="size-4 text-amber-500 dark:text-amber-400" />
+                                </x-slot:icon>
                                 {{ __('Menu') }}
                             </flux:menu.item>
 
-                            <flux:menu.item :href="route('admin.hours')" icon="clock" wire:navigate>
+                            <flux:menu.item :href="route('admin.hours')" wire:navigate>
+                                <x-slot:icon>
+                                    <flux:icon icon="clock" variant="mini" class="size-4 text-emerald-500 dark:text-emerald-400" />
+                                </x-slot:icon>
                                 {{ __('Opening hours') }}
                             </flux:menu.item>
                         </flux:menu.radio.group>
@@ -99,7 +110,10 @@
                     @endcan
 
                     <flux:menu.radio.group>
-                        <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
+                        <flux:menu.item :href="route('profile.edit')" wire:navigate>
+                            <x-slot:icon>
+                                <flux:icon icon="cog-6-tooth" variant="mini" class="size-4 text-violet-500 dark:text-violet-400" />
+                            </x-slot:icon>
                             {{ __('Settings') }}
                         </flux:menu.item>
                     </flux:menu.radio.group>

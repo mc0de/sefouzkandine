@@ -38,3 +38,20 @@ test('the dashboard hides admin shortcuts from everyone else', function () {
         ->assertDontSee(route('admin.hours'), false)
         ->assertSee(route('profile.edit'), false);
 });
+
+test('the shortcut icons keep a colour per section', function () {
+    // Flux renders `icon` as a slot only when it is not a string; if that ever
+    // changes the icons silently fall back to the default grey.
+    $this->actingAs(User::factory()->admin()->create());
+
+    $this->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('bg-blue-100', false)
+        ->assertSee('bg-amber-100', false)
+        ->assertSee('bg-emerald-100', false)
+        ->assertSee('bg-violet-100', false)
+        ->assertSee('bg-rose-100', false)
+        ->assertSee('text-blue-500', false)
+        ->assertSee('text-amber-500', false)
+        ->assertSee('text-emerald-500', false);
+});

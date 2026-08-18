@@ -1,10 +1,15 @@
 @php
-    /** Greitoji navigacija. Administravimo kortelės rodomos tik administratoriams. */
+    /**
+     * Greitoji navigacija. Administravimo kortelės rodomos tik administratoriams.
+     * Spalvos sutampa su šoninės juostos piktogramomis, kad kiekvienas skyrius
+     * turėtų tą pačią spalvą abiejose vietose.
+     */
     $shortcuts = collect([
         [
             'title' => __('Users'),
             'text' => __('Add staff accounts, change roles or remove access.'),
             'icon' => 'users',
+            'chip' => 'bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400',
             'href' => Route::has('admin.users') ? route('admin.users') : null,
             'admin' => true,
         ],
@@ -12,6 +17,7 @@
             'title' => __('Menu'),
             'text' => __('Edit categories, items and prices in both languages.'),
             'icon' => 'squares-2x2',
+            'chip' => 'bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400',
             'href' => Route::has('admin.menu') ? route('admin.menu') : null,
             'admin' => true,
         ],
@@ -19,6 +25,7 @@
             'title' => __('Opening hours'),
             'text' => __('Set the window the kitchen is open on each weekday.'),
             'icon' => 'clock',
+            'chip' => 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400',
             'href' => Route::has('admin.hours') ? route('admin.hours') : null,
             'admin' => true,
         ],
@@ -26,6 +33,7 @@
             'title' => __('Settings'),
             'text' => __('Update your profile, password and security options.'),
             'icon' => 'cog-6-tooth',
+            'chip' => 'bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400',
             'href' => route('profile.edit'),
             'admin' => false,
         ],
@@ -47,7 +55,7 @@
                     wire:navigate
                     class="group flex flex-col items-start rounded-xl border border-neutral-200 p-6 transition hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:border-neutral-600 dark:hover:bg-neutral-800"
                 >
-                    <span class="flex size-11 items-center justify-center rounded-lg bg-neutral-100 text-neutral-600 transition group-hover:bg-white dark:bg-white/10 dark:text-neutral-200 dark:group-hover:bg-white/20">
+                    <span class="flex size-11 items-center justify-center rounded-lg transition group-hover:scale-105 {{ $shortcut['chip'] }}">
                         <flux:icon :icon="$shortcut['icon']" class="size-6" />
                     </span>
 
@@ -68,7 +76,7 @@
                 rel="noopener"
                 class="group flex flex-col items-start rounded-xl border border-dashed border-neutral-300 p-6 transition hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-600 dark:hover:border-neutral-500 dark:hover:bg-neutral-800"
             >
-                <span class="flex size-11 items-center justify-center rounded-lg bg-neutral-100 text-neutral-600 transition group-hover:bg-white dark:bg-white/10 dark:text-neutral-200 dark:group-hover:bg-white/20">
+                <span class="flex size-11 items-center justify-center rounded-lg bg-rose-100 text-rose-600 transition group-hover:scale-105 dark:bg-rose-500/15 dark:text-rose-400">
                     <flux:icon icon="globe-alt" class="size-6" />
                 </span>
 
